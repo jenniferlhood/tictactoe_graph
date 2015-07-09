@@ -12,13 +12,20 @@ header=r'''\documentclass{article}
 \newcommand{\ocol}{blue}
 \newcommand{\ecol}{white}
 
-\usepackage[a1paper,landscape,margin=1cm]{geometry}
+
+\usepackage{geometry}
+ \geometry{
+ papersize={820mm,520mm},
+ left=10mm,
+ right=10mm,
+ top=10mm,
+ bottom=10mm,
+ }
 
 \pagestyle{empty}
 
 \begin{document}
 \begin{tikzpicture}
-
 
 \definecolor{pg_red}{RGB}{255,245,240}
 \definecolor{pg_green}{RGB}{240,255,245}
@@ -33,10 +40,12 @@ header=r'''\documentclass{article}
 \definecolor{b_red}{RGB}{220,80,55}
 \definecolor{b_blue}{RGB}{55,80,220}
 
+
 '''
 
 
 footer=r'''
+
 \end{tikzpicture}
 \end{document}'''
 
@@ -69,7 +78,7 @@ class Vertex(object):
         self.parent = 0
         self.child = 0
         self.bp = 0
-        self.size = int(14*factor)
+        self.size = width/57*factor
         self.thickness = 1
         self.counter = 1
         self.w = 0 #win expected value 
@@ -364,7 +373,7 @@ def reorder():
                 else:
                     v.size = v.size/max(1,(log(len(levelmi),4)))   
                        
-                if (1 < m < 5 and v.win != 0) or (m == 5 and v.win == 1):   
+                if len(levelmi) > 40:
                     if n % 2 == 1:
                         v.xy = (xblock, height*fractions2[m]-4*v.size/6)
                     else:
@@ -372,6 +381,15 @@ def reorder():
                 else:
                     v.xy = (xblock, height*fractions2[m])
                 
+                """
+                if (1 < m < 5 and v.win != 0) or (m == 5 and v.win == 1):   
+                    if n % 2 == 1:
+                        v.xy = (xblock, height*fractions2[m]-4*v.size/6)
+                    else:
+                        v.xy = (xblock, height*fractions2[m]+4*v.size/6)
+                else:
+                    v.xy = (xblock, height*fractions2[m])
+                """
                
                 
                 xblock += width*fractions[winner+1]/(len(levelmi)+1)
@@ -504,7 +522,30 @@ def get_n(levs):
                 countadd = True
         count += 1    
     return count        
+
+def draw_good_edges():
+
+    for v in vertices:
+        m = v.moves()
+        i = vertices.index(v)
+        pos = height*fractions2[m]
+        drop_v = v.xy[1]-pos 
+        
+        for u in a_list[i]:
+            pos_u = height*fractions2[u.moves()]
+            drop_u = u.xy[1] - pos_u
+            if u.moves() < v.moves() and u.win == v.win:
+                #draw line down to common level in row
+                zero = v.xy
+                one = (v.xy[0], v.xy[1] - (drop_v + 3*v.size/2))
+                #draw line across to perfect child
+                two = (u.xy[0], u.xy[1] + (drop_u + 3*v.size/2))
+                #draw line down to perfect child
+                three = u.xy
+                print draw_path([zero,one,two,three], 
+                                    'black, rounded corners')
             
+           
 def draw_bad_edges():
     col = {-1: "m_red", 0: "m_green", 1: "m_blue"}
     for m in reversed(range(10)):
@@ -548,8 +589,8 @@ def draw_bad_edges():
                         
                         
                 if step == True:
-                    if m > 0:
-                        v_step += (height*(fractions2[m]-fractions2[m-1])-2*maxsize)/n
+                    
+                    v_step += (height*(fractions2[m]-fractions2[m-1])-maxsize)/n
                         
 
         else:
@@ -585,8 +626,8 @@ def draw_bad_edges():
                                     options)            
                                     
                 if step == True:
-                    if m > 0:
-                        v_step += (height*(fractions2[m]-fractions2[m-1])-2*maxsize)/n
+                    
+                    v_step += (height*(fractions2[m]-fractions2[m-1])-2*maxsize)/n
 
 
 
@@ -600,7 +641,7 @@ def draw_bad_edges():
 
 if __name__ == "__main__":
     """Program entry point."""
-
+   
     # Print LaTeX preamble.
     print header
     
@@ -661,67 +702,11 @@ if __name__ == "__main__":
               .format(col, col, width*sum(fractions[:i]), 0, width, height)
     
     
-    #Draw bad edges
+    #draw edges
     draw_bad_edges()
     
-    
-    
-    
-    
-    """
-    # Draw the boring edges.
-    for m in range(10):
-
-        layer_m = [u for u in vertices if u.moves() == m ]
-
-        # Determine how much vertical space we have between layers
-        ymax = min([u.xy[1]-u.size/2 for u in layer_m])
-        layer_m1 = [u for u in vertices if u.moves() == m+1 ]
-        ymin = max([u.xy[1]+u.size/2 for u in layer_m1])
-        ydelta = ymax-ymin
-
-        # Mark slots for incoming edges in layer m+1.
-        #for w in layer_m1:
-
-        # We only care about nodes incident on boring edges.            
-        layer = [ u for u in layer_m if len([w for w in a_list[vertices.index(u)] 
-                    if w.win != u.win]) >0]
-        
-        #layer = [u for u in layer_m 
-        #          if len([vertices[j] for j in a_list.index(u)
-        #                    if vertices[j].win != u.win]) > 0]
-        
-        # Sort nodes left-to-right or right-to-left depending on who's playing.
-        layer = sorted(layer, key=lambda u: u.xy[0])
-        if m % 2:
-            layer.reverse()
-
-        for i in range(len(layer)):
-            u = layer[i]
-                       
-            nbs = [w for w in a_list[vertices.index(u)] 
-                        if w.win != u.win]
-
-            
-            #nbs = [vertices[j] for j in a_list[vertices.index(u)]
-            #            if vertices[j].win != u.win]
-            
-                        
-            if nbs:
-                y = ymax - (i+1)*ydelta/(len(layer)+1)
-                for w in nbs:
-                    print draw_path([(u.xy[0], u.xy[1]-u.size/2),
-                                     (u.xy[0], y),
-                                     (w.xy[0], y),
-                                     (w.xy[0], w.xy[1]+w.size/2)], 
-                                    'gray, rounded corners')
-                    
-    
-      
-    """
-    
-    
-    
+    draw_good_edges()
+   
     
     """
     # Draw the core edges.
