@@ -533,13 +533,13 @@ def draw_good_edges():
         
         for u in a_list[i]:
             pos_u = height*fractions2[u.moves()]
-            drop_u = u.xy[1] - pos_u
+            drop_u = pos_u-u.xy[1] 
             if u.moves() < v.moves() and u.win == v.win:
                 #draw line down to common level in row
                 zero = v.xy
                 one = (v.xy[0], v.xy[1] - (drop_v + 3*v.size/2))
                 #draw line across to perfect child
-                two = (u.xy[0], u.xy[1] + (drop_u + 3*v.size/2))
+                two = (u.xy[0], u.xy[1] + (drop_u + 3*u.size/2))
                 #draw line down to perfect child
                 three = u.xy
                 print draw_path([zero,one,two,three], 
@@ -574,8 +574,8 @@ def draw_bad_edges():
                         u.counter += 1
                                                            
                         #draw the vertical line down the the desired depth        
-                        zero = (v.xy[0],v.xy[1])
-                        one = (v.xy[0], v.xy[1]-v_step-drop) 
+                        zero = (v.xy[0]+v.size/6,v.xy[1])
+                        one = (v.xy[0]+v.size/6, v.xy[1]-v_step-drop) 
                         
                         #draw the horizontal line across to the child vertex
                         two = (end_x,one[1])
@@ -612,8 +612,8 @@ def draw_bad_edges():
                         u.counter += 1
                                                         
                         #draw the vertical line down the the desired depth        
-                        zero = (v.xy[0],v.xy[1])
-                        one = (v.xy[0], v.xy[1]-v_step-drop)
+                        zero = (v.xy[0]-v.size/6,v.xy[1])
+                        one = (v.xy[0]-v.size/6, v.xy[1]-v_step-drop)
                                                 
                         #draw the horizontal line across to the child vertex
                         two = (end_x,one[1])
