@@ -15,7 +15,7 @@ header=r'''\documentclass{article}
 
 \usepackage{geometry}
  \geometry{
- papersize={820mm,520mm},
+ papersize={830mm,530mm},
  left=10mm,
  right=10mm,
  top=10mm,
@@ -23,9 +23,6 @@ header=r'''\documentclass{article}
  }
 
 \pagestyle{empty}
-
-\begin{document}
-\begin{tikzpicture}
 
 \definecolor{pg_red}{RGB}{255,245,240}
 \definecolor{pg_green}{RGB}{240,255,245}
@@ -40,12 +37,12 @@ header=r'''\documentclass{article}
 \definecolor{b_red}{RGB}{220,80,55}
 \definecolor{b_blue}{RGB}{55,80,220}
 
-
+\begin{document}
+\begin{tikzpicture}
 '''
 
 
 footer=r'''
-
 \end{tikzpicture}
 \end{document}'''
 
@@ -381,17 +378,7 @@ def reorder():
                 else:
                     v.xy = (xblock, height*fractions2[m])
                 
-                """
-                if (1 < m < 5 and v.win != 0) or (m == 5 and v.win == 1):   
-                    if n % 2 == 1:
-                        v.xy = (xblock, height*fractions2[m]-4*v.size/6)
-                    else:
-                        v.xy = (xblock, height*fractions2[m]+4*v.size/6)
-                else:
-                    v.xy = (xblock, height*fractions2[m])
-                """
-               
-                
+ 
                 xblock += width*fractions[winner+1]/(len(levelmi)+1)
                 v.sortkey = v.xy[0]
 
@@ -492,21 +479,15 @@ def draw_square(pos, size, val):
           .format(d[val], pos[0], pos[1], pos[0]+size/3, pos[1]+size/3)
 
 def draw_board(pos, size, board, winner):
-    wincol = ['blue', 'purple', 'red', 'green'][winner+1]
     pos = pos[0]-size/2, pos[1]-size/2
     s = ''
-    #s = r'\draw [{},fill={}] ({}mm,{}mm) rectangle ({}mm,{}mm);'\
-    #    .format(wincol, wincol, pos[0]-size/4, pos[1]-size/4, pos[0]+1.25*size, 
-    #            pos[1]+1.25*size)  
+ 
     for i in range(9):
         s += draw_square( ( pos[0]+(i%3)*(size/3), pos[1]+(i//3)*(size/3) ),
                           size, board[i]);
     return s + '\n'
     
-    
-    
-    
-    
+
 def draw_path(points, options):
     t = ["({}mm,{}mm)".format(p[0],p[1]) for p in points]
     return r'\draw [{}]'.format(options) + "--".join(t) + ';';
@@ -632,13 +613,6 @@ def draw_bad_edges():
 
 
 
-
-
-
-
-
-
-
 if __name__ == "__main__":
     """Program entry point."""
    
@@ -669,32 +643,6 @@ if __name__ == "__main__":
     #winningness()
     
 
-    """
-    for m in range(10):
-        layer = [w for w in vertices if w.moves() == m]
-        for winner in [-1, 0, 1]:
-            winlayer = [w for w in layer if w.winner == winner]
-            if len(winlayer) == 0: continue
-            for w in winlayer:
-                parents = [p for p in w.parents if p.winner == winner]
-                if len(w.neighbours) == 0:
-                    w.sortkey = [-2**20,None,2**20][winner+1] # FIXME.
-                elif parents:
-                    w.sortkey = sum([p.xy[0] for p in parents])/len(parents)
-                else:
-                    w.sortkey = [2**20,width/2,-2**20][winner+1] # FIXME.
-            winlayer = sorted(winlayer, key=lambda u: u.sortkey)
-
-            mywidth = width*fractions[winner+1]
-            deltax = mywidth/(len(winlayer)+1)
-            xblock = deltax + width*sum(fractions[:winner+1])
-            size = min(40, mywidth/(1.2*(len(winlayer)+1)))
-            for u in winlayer:
-                u.size = size
-                u.xy = (xblock, (10-m)*height/11)
-                xblock += deltax
-    """
-    
     # Draw backgrounds.
     for i in [0, 1, 2]:
         col = ['pg_red', 'pg_green', 'pg_blue'][i]
@@ -707,20 +655,6 @@ if __name__ == "__main__":
     
     draw_good_edges()
    
-    
-    """
-    # Draw the core edges.
-    for u in vertices:
-       
-        i = vertices.index(u)
-        print i,
-        for w in a_list[i]:
-            if u.win == w.win and w.moves() < u.moves():
-                print r'\draw [{}] ({}mm,{}mm)--({}mm,{}mm);'\
-                    .format('black', u.xy[0], u.xy[1]-u.size/2, 
-                            w.xy[0], w.xy[1]+w.size/2);
-    """
-    
     # Draw the vertices.
     for u in vertices:
         print draw_board(u.xy, u.size, u.symbol, u.win)
