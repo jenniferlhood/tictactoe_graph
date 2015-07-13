@@ -37,6 +37,10 @@ header=r'''\documentclass{article}
 \definecolor{b_red}{RGB}{220,80,55}
 \definecolor{b_blue}{RGB}{55,80,220}
 
+\definecolor{grey1}{RGB}{200,200,200}
+\definecolor{grey2}{RGB}{80,80,80}
+
+
 \begin{document}
 \begin{tikzpicture}
 '''
@@ -394,9 +398,8 @@ def symmetry():
             
     for i in range(len(vertices)):
         v = vertices[i]
-        a = list(vertices.symbol)
-        v.thick = 1
-              
+        a = list(vertices[i].symbol)
+                      
         if v.moves() % 2 == 0:
             player = "O"
         else:
@@ -449,25 +452,18 @@ def winningness():
 
 
     
-def w_col(v):
-    cols = [  (255,0,0), (200, 200, 200), (0,0,255) ]
-    #if v.child == 0: return (255, 255, 255)
-    if v.w < 0:
-        c =  [-v.w*cols[0][i] + (1+v.w)*cols[1][i] for i in [0, 1, 2]]
-    else:
-        c = [v.w*cols[2][i] + (1-v.w)*cols[1][i] for i in [0, 1, 2]]
-    return c
-
-
-def w_col2(v):
-    cols = [  (240,0,0), (80, 80, 80), (0,0,240) ]
-    #if v.child == 0: return (255, 255, 255)
-    if v.w < 0:
-        c =  [-v.w*cols[0][i] + (1+v.w)*cols[1][i] for i in [0, 1, 2]]
-    else:
-        c = [v.w*cols[2][i] + (1-v.w)*cols[1][i] for i in [0, 1, 2]]
-    return c
+def w_col(v, cols):
+    #cols = [  (255,0,0), (200, 200, 200), (0,0,255) ]
     
+    
+    if v.w < 0:
+        # c =  [-v.w*cols[0][i] + (1+v.w)*cols[1][i] for i in [0, 1, 2]]
+        c = cols[0] +"!"+str(-1*v.w*100)+"!"+cols[1]
+    else:
+        #c = [v.w*cols[2][i] + (1-v.w)*cols[1][i] for i in [0, 1, 2]]
+        c = cols[2] +"!"+str(v.w*100)+"!"+cols[1]
+    return c
+
 
 
 
@@ -478,14 +474,19 @@ def draw_square(pos, size, val):
     return r'\draw [black,fill={}] ({}mm,{}mm) rectangle ({}mm,{}mm);'\
           .format(d[val], pos[0], pos[1], pos[0]+size/3, pos[1]+size/3)
 
-def draw_board(pos, size, board, winner):
+def draw_board(pos, size, board, winner,col):
     pos = pos[0]-size/2, pos[1]-size/2
     s = ''
- 
+  
+    
     for i in range(9):
         s += draw_square( ( pos[0]+(i%3)*(size/3), pos[1]+(i//3)*(size/3) ),
                           size, board[i]);
-    return s + '\n'
+    
+    border = "\draw [{}] ({}mm, {}mm) rectangle ({}mm, {}mm);"\
+            .format(col,pos[0],pos[1], pos[0]+size, pos[1]+size)
+            
+    return s + '\n' + border + '\n'
     
 
 def draw_path(points, options):
@@ -505,16 +506,23 @@ def get_n(levs):
     return count        
 
 def draw_good_edges():
-
+    
     for v in vertices:
         m = v.moves()
         i = vertices.index(v)
         pos = height*fractions2[m]
         drop_v = v.xy[1]-pos 
         
+      
         for u in a_list[i]:
             pos_u = height*fractions2[u.moves()]
             drop_u = pos_u-u.xy[1] 
+            t = {1: "thin", 2:"semithick",3:"thick",4:"very thick", 5:"very thick"}
+            col = w_col(u, ['red','grey2','blue'])
+            
+            j = a_list[i].index(u)
+            
+            
             if u.moves() < v.moves() and u.win == v.win:
                 #draw line down to common level in row
                 zero = v.xy
@@ -523,8 +531,11 @@ def draw_good_edges():
                 two = (u.xy[0], u.xy[1] + (drop_u + 3*u.size/2))
                 #draw line down to perfect child
                 three = u.xy
+                
+                options =  '{}, {}, rounded corners'.format(col,t[s_list[i][j]])
+               
                 print draw_path([zero,one,two,three], 
-                                    'black, rounded corners')
+                                    options)
             
            
 def draw_bad_edges():
@@ -541,8 +552,8 @@ def draw_bad_edges():
             for v in reversed(sorted(levs[m], key= lambda w: w.sortkey)):
                 j = vertices.index(v)
                           
-                maxsize = max(maxsize,v.size)
-                drop = (v.xy[1]-pos)+maxsize
+                
+                drop = (v.xy[1]-pos)+v.size
                 step = False
                 for u in a_list[j]:
                      
@@ -571,15 +582,15 @@ def draw_bad_edges():
                         
                 if step == True:
                     
-                    v_step += (height*(fractions2[m]-fractions2[m-1])-maxsize)/n
-                        
+                    #v_step += (height*(fractions2[m+1]-fractions2[m])-15*factor)/n
+                    v_step += (height*(fractions2[m]-fractions2[m-1])-15*factor)/n    
 
         else:
             
             for v in sorted(levs[m], key= lambda w: w.sortkey):
                 j = vertices.index(v)
-                maxsize = max(maxsize,v.size)
-                drop = (v.xy[1]-pos)+maxsize
+                
+                drop = (v.xy[1]-pos)+3*v.size/2
                 step = False
                 for u in a_list[j]:
                     
@@ -608,7 +619,7 @@ def draw_bad_edges():
                                     
                 if step == True:
                     
-                    v_step += (height*(fractions2[m]-fractions2[m-1])-2*maxsize)/n
+                    v_step += (height*(fractions2[m]-fractions2[m-1])-width/57*factor)/n
 
 
 
@@ -639,8 +650,8 @@ if __name__ == "__main__":
     # Assign coordinates to the nodes.
     reorder()
     
-    #symmetry()
-    #winningness()
+    symmetry()
+    winningness()
     
 
     # Draw backgrounds.
@@ -657,7 +668,8 @@ if __name__ == "__main__":
    
     # Draw the vertices.
     for u in vertices:
-        print draw_board(u.xy, u.size, u.symbol, u.win)
+        col = w_col(u,['red','grey1','blue'])
+        print draw_board(u.xy, u.size, u.symbol, u.win,col)
    
     
     print footer
