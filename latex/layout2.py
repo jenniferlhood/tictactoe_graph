@@ -29,16 +29,19 @@ header=r'''\documentclass{article}
 \definecolor{pg_blue}{RGB}{240,245,255}
 
 
-\definecolor{m_red}{RGB}{225,180,170}
-\definecolor{m_green}{RGB}{170,225,180}
-\definecolor{m_blue}{RGB}{170,180,225}
+\definecolor{m_red}{RGB}{230,190,180}
+\definecolor{m_green}{RGB}{180,230,190}
+\definecolor{m_blue}{RGB}{180,190,230}
 
 
 \definecolor{b_red}{RGB}{220,80,55}
 \definecolor{b_blue}{RGB}{55,80,220}
 
 \definecolor{grey1}{RGB}{200,200,200}
-\definecolor{grey2}{RGB}{80,80,80}
+\definecolor{grey2}{RGB}{40,40,40}
+
+\definecolor{d_blue}{RGB}{0,0,180}
+\definecolor{d_red}{RGB}{180,0,0}
 
 
 \begin{document}
@@ -453,18 +456,12 @@ def winningness():
 
     
 def w_col(v, cols):
-    #cols = [  (255,0,0), (200, 200, 200), (0,0,255) ]
     
-    
-    if v.w < 0:
-        # c =  [-v.w*cols[0][i] + (1+v.w)*cols[1][i] for i in [0, 1, 2]]
+    if v.w < 0:        
         c = cols[0] +"!"+str(-1*v.w*100)+"!"+cols[1]
-    else:
-        #c = [v.w*cols[2][i] + (1-v.w)*cols[1][i] for i in [0, 1, 2]]
+    else: 
         c = cols[2] +"!"+str(v.w*100)+"!"+cols[1]
     return c
-
-
 
 
 
@@ -477,14 +474,14 @@ def draw_square(pos, size, val):
 def draw_board(pos, size, board, winner,col):
     pos = pos[0]-size/2, pos[1]-size/2
     s = ''
-  
+    thick = size/5
     
     for i in range(9):
         s += draw_square( ( pos[0]+(i%3)*(size/3), pos[1]+(i//3)*(size/3) ),
                           size, board[i]);
     
-    border = "\draw [{}] ({}mm, {}mm) rectangle ({}mm, {}mm);"\
-            .format(col,pos[0],pos[1], pos[0]+size, pos[1]+size)
+    border = "\draw [{},line width = {}pt] ({}mm, {}mm) rectangle ({}mm, {}mm);"\
+            .format(col,thick,pos[0],pos[1], pos[0]+size, pos[1]+size)
             
     return s + '\n' + border + '\n'
     
@@ -495,14 +492,15 @@ def draw_path(points, options):
 
 def get_n(levs):
     count = 0
-    countadd = False
+    
     for w in levs:
         i = vertices.index(w)
+        countadd = False
         
         for x in a_list[i]:
             if x.moves() < w.moves() and x.win != w.win:
                 countadd = True
-        count += 1    
+        if countadd: count += 1    
     return count        
 
 def draw_good_edges():
@@ -517,12 +515,13 @@ def draw_good_edges():
         for u in a_list[i]:
             pos_u = height*fractions2[u.moves()]
             drop_u = pos_u-u.xy[1] 
-            t = {1: "thin", 2:"semithick",3:"thick",4:"very thick", 5:"very thick"}
-            col = w_col(u, ['red','grey2','blue'])
+            #t = {1: "thin", 2:"semithick",3:"thick",4:"very thick", 5:"very thick"}
+            
+            col = w_col(u, ['d_red','grey2','d_blue'])
             
             j = a_list[i].index(u)
             
-            
+            t= s_list[i][j]/2
             if u.moves() < v.moves() and u.win == v.win:
                 #draw line down to common level in row
                 zero = v.xy
@@ -532,8 +531,9 @@ def draw_good_edges():
                 #draw line down to perfect child
                 three = u.xy
                 
-                options =  '{}, {}, rounded corners'.format(col,t[s_list[i][j]])
-               
+                #options =  '{}, {}, rounded corners'.format(col,t[s_list[i][j]])
+                options =  '{}, line width = {}pt, rounded corners'.format(col,t)
+                
                 print draw_path([zero,one,two,three], 
                                     options)
             
@@ -541,19 +541,21 @@ def draw_good_edges():
 def draw_bad_edges():
     col = {-1: "m_red", 0: "m_green", 1: "m_blue"}
     for m in reversed(range(10)):
-        
-        v_step = 0
-        pos =height*fractions2[m]
-        maxsize = 0
+
         n=get_n(levs[m])
         
-        if m % 2 ==0: #x wins
+        pad = 2
+        level_m = [v for v in vertices if v.moves() == m ]
+        a = min([ v.xy[1] - v.size/2 for v in level_m ]) - pad
+        if m > 0:
+            b = max([ v.xy[1] + v.size/2 for v in vertices if v.moves() == m-1 ]) + pad
+        else: 
+            b = 0
             
+        if m % 2 ==0: #x wins
+            t = 0
             for v in reversed(sorted(levs[m], key= lambda w: w.sortkey)):
                 j = vertices.index(v)
-                          
-                
-                drop = (v.xy[1]-pos)+v.size
                 step = False
                 for u in a_list[j]:
                      
@@ -567,7 +569,7 @@ def draw_bad_edges():
                                                            
                         #draw the vertical line down the the desired depth        
                         zero = (v.xy[0]+v.size/6,v.xy[1])
-                        one = (v.xy[0]+v.size/6, v.xy[1]-v_step-drop) 
+                        one = (v.xy[0]+v.size/6, a + (t/n)*(b-a)) 
                         
                         #draw the horizontal line across to the child vertex
                         two = (end_x,one[1])
@@ -575,22 +577,20 @@ def draw_bad_edges():
                         #draw the vertical line down to the child vertex
                         three = (end_x,u.xy[1])
                         
-                        options = '{}, rounded corners'.format(col[u.win])
+                        options = '{}, rounded corners,very thin'.format(col[u.win])
                         print draw_path([zero,one,two,three], 
                                     options)
                         
                         
                 if step == True:
-                    
-                    #v_step += (height*(fractions2[m+1]-fractions2[m])-15*factor)/n
-                    v_step += (height*(fractions2[m]-fractions2[m-1])-15*factor)/n    
+                    t += 1
+  
 
         else:
-            
+            t = 0
             for v in sorted(levs[m], key= lambda w: w.sortkey):
                 j = vertices.index(v)
                 
-                drop = (v.xy[1]-pos)+3*v.size/2
                 step = False
                 for u in a_list[j]:
                     
@@ -605,7 +605,7 @@ def draw_bad_edges():
                                                         
                         #draw the vertical line down the the desired depth        
                         zero = (v.xy[0]-v.size/6,v.xy[1])
-                        one = (v.xy[0]-v.size/6, v.xy[1]-v_step-drop)
+                        one = (v.xy[0]-v.size/6, a + (t/n)*(b-a))
                                                 
                         #draw the horizontal line across to the child vertex
                         two = (end_x,one[1])
@@ -613,13 +613,13 @@ def draw_bad_edges():
                         #draw the vertical line down to the child vertex
                         three = (end_x,u.xy[1])
                         
-                        options = '{}, rounded corners'.format(col[u.win])
+                        options = '{}, rounded corners,very thin'.format(col[u.win])
                         print draw_path([zero,one,two,three], 
                                     options)            
                                     
                 if step == True:
-                    
-                    v_step += (height*(fractions2[m]-fractions2[m-1])-width/57*factor)/n
+                    t += 1
+
 
 
 
