@@ -8,19 +8,19 @@ header=r'''\documentclass{article}
 
 \usepackage{tikz}
 
-\newcommand{\xcol}{red}
-\newcommand{\ocol}{blue}
-\newcommand{\ecol}{white}
-
 
 \usepackage{geometry}
  \geometry{
- papersize={830mm,530mm},
+ papersize={915mm,610mm},
  left=10mm,
  right=10mm,
  top=10mm,
  bottom=10mm,
  }
+ 
+\usepackage[default]{comfortaa}
+\usepackage[T1]{fontenc}
+
 
 \pagestyle{empty}
 
@@ -34,8 +34,8 @@ header=r'''\documentclass{article}
 \definecolor{m_blue}{RGB}{180,190,230}
 
 
-\definecolor{b_red}{RGB}{220,80,55}
-\definecolor{b_blue}{RGB}{55,80,220}
+\definecolor{b_red}{RGB}{200,0,0}
+\definecolor{b_blue}{RGB}{0,0,200}
 
 \definecolor{grey1}{RGB}{200,200,200}
 \definecolor{grey2}{RGB}{40,40,40}
@@ -66,7 +66,7 @@ a_list = []
 s_list = []
 win = []
 levs = [[],[],[],[],[],[],[],[],[],[]]
-width, height =  800, 500
+width, height =  893, 588
 fractions = [.35, .3, .35] # These are the fractions of width devoted to O, draw, and X.
 factor = 1
 #fractions2 = [1/22,2/22,3/22,5/22,8/22,11/22,14/22,17/22,20/22,21/22]
@@ -468,8 +468,23 @@ def w_col(v, cols):
 
 def draw_square(pos, size, val):
     d = dict( [('-', 'white'), ('X', 'b_blue'), ('O', 'b_red')] )
-    return r'\draw [black,fill={}] ({}mm,{}mm) rectangle ({}mm,{}mm);'\
+    a = ""
+    
+    if val == 'X':
+        a = '\draw[m_blue] ({}mm, {}mm) -- ({}mm, {}mm);\
+                \n\draw[m_blue] ({}mm, {}mm) -- ({}mm,{}mm);'\
+                .format(pos[0], pos[1], pos[0]+size/3, pos[1]+size/3,\
+                pos[0],pos[1]+size/3,pos[0]+size/3, pos[1])
+                
+    elif val == "O":
+        a = '\draw[m_red] ({}mm,{}mm) circle [radius = {}mm];'\
+            .format(pos[0]+size/6,pos[1]+size/6,size/7)
+    
+    b = '\draw [black,fill={}] ({}mm,{}mm) rectangle ({}mm,{}mm);'\
           .format(d[val], pos[0], pos[1], pos[0]+size/3, pos[1]+size/3)
+          
+    return b + '\n' + a
+          
 
 def draw_board(pos, size, board, winner,col):
     pos = pos[0]-size/2, pos[1]-size/2
@@ -522,6 +537,7 @@ def draw_good_edges():
             j = a_list[i].index(u)
             
             t= s_list[i][j]/2
+            
             if u.moves() < v.moves() and u.win == v.win:
                 #draw line down to common level in row
                 zero = v.xy
@@ -620,7 +636,45 @@ def draw_bad_edges():
                 if step == True:
                     t += 1
 
+def draw_title():
 
+    indent1 = width/35
+    indent2 = indent1 + 30
+    title = r"""{\fontsize{20mm}{40mm}\selectfont Tictactoe
+     
+     }"""
+    
+    text = r'''{    
+    \fontsize{8mm}{10mm}\selectfont X wins (perfect play)
+     
+    O wins (perfect play)
+     
+    X wins (O's mistake)
+    
+    O wins (X's mistake)
+    
+    draw
+    
+    }'''
+     
+     
+    a = r'''\node [right, text width = 20 cm] at ({}mm, {}mm) {};
+    \node [right, text width = 20cm] at ({}mm, {}mm) {};'''\
+        .format(indent1, height-20,title,indent2, height-60, text)
+    b =  r'''\draw[d_blue,line width = 2pt] ({}mm, {}mm) -- ({}mm, {}mm);
+    \draw[d_red,line width = 2pt] ({}mm, {}mm) -- ({}mm, {}mm);
+    \draw[m_blue] ({}mm, {}mm) -- ({}mm, {}mm);
+    \draw[m_red] ({}mm, {}mm) -- ({}mm, {}mm);
+    \draw[m_green] ({}mm, {}mm) -- ({}mm, {}mm);
+    '''.format(indent1, height-40, indent1+20, height-40,\
+            indent1, height-50, indent1+20, height-50,\
+            indent1, height-60, indent1+20, height-60,\
+            indent1, height-70, indent1+20, height-70,\
+            indent1, height-80, indent1+20, height-80)
+    
+
+     
+    return a + '\n\n' + b
 
 
 
@@ -671,6 +725,10 @@ if __name__ == "__main__":
         col = w_col(u,['red','grey1','blue'])
         print draw_board(u.xy, u.size, u.symbol, u.win,col)
    
+    # Draw the title
     
+    print draw_title()
+    
+       
     print footer
 
