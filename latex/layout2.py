@@ -640,12 +640,12 @@ def draw_title():
 
     indent1 = width/35
     indent2 = indent1 + 30
-    title = r"""{\fontsize{20mm}{40mm}\selectfont Tictactoe
+    title = r"""{\fontsize{25mm}{40mm}\selectfont Tictactoe
      
      }"""
     
     text = r'''{    
-    \fontsize{8mm}{10mm}\selectfont X wins (perfect play)
+    \fontsize{10mm}{10mm}\selectfont X wins (perfect play)
      
     O wins (perfect play)
      
@@ -657,6 +657,9 @@ def draw_title():
     
     }'''
      
+    author = r'''{\fontsize{5mm}{10mm}\selectfont
+            created by Jennifer L.A. Hood and Pat Morin,
+             2015, Carleton University}'''
      
     a = r'''\node [right, text width = 20 cm] at ({}mm, {}mm) {};
     \node [right, text width = 20cm] at ({}mm, {}mm) {};'''\
@@ -672,9 +675,11 @@ def draw_title():
             indent1, height-70, indent1+20, height-70,\
             indent1, height-80, indent1+20, height-80)
     
-
-     
-    return a + '\n\n' + b
+    
+    c = r'''\node [right, text width = 20 cm,m_red] at ({}mm,{}mm) {};'''\
+            .format(10, 10, author)
+            
+    return a + '\n\n' + b + '\n' + c
 
 
 
