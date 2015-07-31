@@ -22,10 +22,7 @@ footer=r'''
 </html> 
 '''.format(width,height)
 
-c_list_win = [(255,245,240),(240,255,245),(240,245,255)]
-c_list = [(0,0,0),(200,200,200)]
-c_list1 = [(200,55,35),(35,200,55),(35,55,200),(225,180,170),(170,225,180),(170,180,225)]
-c_list2 = [(220,80,55),(255,255,255),(55,80,220)]
+
 
 col_m = ['rgb(200,155,135)','rgb(135,200,155)','rgb(135,155,200)']
 
@@ -433,56 +430,81 @@ def w_col(v):
 
    
 
+def generate_points():
 
+    for v in vertices:
+        i = vertices.index(v)
+        print ''' var p{} = new Point({},{});'''.format(i,v.xy[0],v.xy[1])
+        
 
-def draw_square(pos, size, val):
+def draw_square(i,pos, val):
     d = dict( [('-', 'white'), ('X', 'blue'), ('O', 'red')] )
     
-    board = '''var rect = new Rectangle(new Point({},{}), new Size({},{}));
+    board = '''var rect{} = new Rectangle(new Point({}), squareSize);
         var path = new Path.Rectangle(rect);
         path.fillColor = '{}';
         path.strokeColor = 'black';
               
-        '''.format(pos[0],pos[1],size/3,size/3,d[val])
+        '''.format(i,pos,d[val])
       
     return board       
 
-def draw_board(pos, size, board, winner,col):
-    pos = pos[0]-size/2, pos[1]-size/2
-    s = ''
-    thick = int(size/7)
-    
-    
-    for i in range(9):
-        s += draw_square( ( pos[0]+(i%3)*(size/3), pos[1]+(i//3)*(size/3) ),
-                          size, board[i]);
+def draw_board2(u):
+    x=u.xy[0]
+    y=u.xy[1]
+    s=u.size/5
+    players=''
+    back = '''var back = new Path.Rectangle(new Rectangle(new Point({},{}), new Point({},{})));
+        back.fillColor = 'white';
+        '''.format(x-3*s,y-3*s,x+3*s,y+3*s)
+         
+    pre = '''
+        var board = new CompoundPath(
+            new Path(new Point({},{}), new Point({},{})),
+            new Path(new Point({},{}), new Point({},{})),
+            new Path(new Point({},{}), new Point({},{})),
+            new Path(new Point({},{}), new Point({},{}))
+        '''.format(x-s,y-3*s,x-s,y+3*s,x+s,y-3*s,x+s,y+3*s,x-3*s,y-s,x+3*s,y-s,x-3*s,y+s,x+3*s,y+s)
+    post ='''
+        );
+        board.strokeColor= "black";
+        '''    
         
-    
-    
-    #border = "\draw [{},line width = {}pt] ({}mm, {}mm) rectangle ({}mm, {}mm);"\
-    #        .format(col,thick,pos[0],pos[1], pos[0]+size, pos[1]+size)
+    return back + pre + post
     
 
-                
-    border = '''var rect = new Rectangle(new Point({},{}), new Size({},{}));
-        var path = new Path.Rectangle(rect);
+def draw_board(u,i,col):
+    s = ''
+    thick = int(u.size/7)
+    
+    pre = '''var squareSize = new Size({},{});'''.format(u.size/3,u.size/3)
+    
+    for j in range(9):
+        pos_move = "p{}.x+{},p{}.y+{}"\
+                .format(i,(j%3*u.size/3-u.size/2),i,(j//3*u.size/3-u.size/2))
+        
+        
+        
+        
+        s += draw_square(j,pos_move, u.symbol[j])
+        
+            
+    border = '''var rect{} = new Path.Rectangle(new Rectangle(new Point(p{}.x-{},p{}.y-{}), new Size({},{})));
         path.strokeColor = 'rgb(200,200,200)';
         path.strokeWidth = {};
-        '''.format(pos[0],pos[1],size,size,thick)
+        '''.format(i,i,3*u.size/2,i,3*u.size/2,u.size,u.size,thick)
             
-    return s + '\n' + border + '\n'
-    #return s
+    #return s + '\n' + border + '\n'
+    return pre + '\n' + s
 
-def draw_path(points,w,col):
-    t = ["new Point({},{})".format(p[0],p[1]) for p in points]
+def draw_path(points,w,col,pc):
+      return '''  var {} = new Path();
+                {}.add({});
+                {}.strokeWidth = {};
+                {}.strokeColor = '{}';'''\
+                .format(pc,pc,", ".join(points),pc, w, pc, col)
+
     
-    return '''  var p = new Path();
-                p.add({});
-                p.strokeWidth = {};
-                p.strokeJoin = 'round';
-                p.strokeColor = '{}';'''.format(", ".join(t), w, col)
-
-
 def get_n(levs):
     count = 0
     
@@ -503,9 +525,10 @@ def draw_good_edges():
         i = vertices.index(v)
         pos = height*fractions2[9-m]
         drop_v = pos-v.xy[1] 
-        
+       
       
         for u in a_list[i]:
+            k = vertices.index(u)
             pos_u = height*fractions2[9-u.moves()]
             drop_u = u.xy[1]-pos_u
             #t = {1: "thin", 2:"semithick",3:"thick",4:"very thick", 5:"very thick"}
@@ -518,62 +541,61 @@ def draw_good_edges():
             
             if u.moves() < v.moves() and u.win == v.win:
                 #draw line down to common level in row
-                zero = v.xy
-                one = (v.xy[0], v.xy[1] + (drop_v + 3*v.size/2))
-                
+                zero = "new Point(p{}.x, p{}.y)".format(i,i)
+                one = "new Point(p{}.x, p{}.y+{})".format(i,i,(drop_v + 3*v.size/2))
                 #draw line across to perfect child
-                two = (u.xy[0], u.xy[1] - (drop_u + 3*u.size/2))
-               
+                two = "new Point(p{}.x, p{}.y-{})".format(k,k,(drop_u + 3*u.size/2))
                 #draw line down to perfect child
-                three = u.xy
-                
+                three = "new Point(p{}.x, p{}.y)".format(k,k)
                
-                print draw_path([zero,one,two,three], 1.1,'black')
-            
+                print draw_path([zero,one,two,three], 1.1,'black',"g")
+                
            
 def draw_bad_edges():
-    #col = {-1: "m_red", 0: "m_green", 1: "m_blue"}
+    
     for m in reversed(range(10)):
-
-        n=get_n(levs[m])
-        
+        n=get_n(levs[m])      
         pad = width/100
-        
         level_m = [v for v in vertices if v.moves() == m ]
-        a = min([ v.xy[1] + v.size/2 for v in level_m ]) + pad
+        a = min([v.xy[1] + v.size/2 for v in level_m ]) + pad      
         if m > 0:
-            b = max([ v.xy[1] - v.size/2 for v in vertices if v.moves() == m-1 ]) - pad
+            b = max([v.xy[1] -v.size/2 for v in vertices if v.moves() == m-1 ]) - pad
         else: 
             b = 0
             
         if m % 2 ==0: #x wins
             t = 0
             for v in reversed(sorted(levs[m], key= lambda w: w.sortkey)):
-                j = vertices.index(v)
+                i = vertices.index(v)
                 step = False
-                for u in a_list[j]:
-                     
+                for u in a_list[i]:
+                    j = vertices.index(u)
                     if u.moves() < v.moves() and u.win != v.win:
                         step = True
-                        
-                        #end_x = (u.xy[0] + 2*u.size) - (u.size*3/(u.bp+1)*u.counter)
-                        
-                        end_x = u.xy[0] + u.size/2 - (u.counter)/(u.bp+1)*u.size
+                                               
+                        end_x = u.size/2 - (u.counter)/(u.bp+1)*u.size
                         u.counter += 1
+                        
+
                                                            
                         #draw the vertical line down the the desired depth        
-                        zero = (v.xy[0]+v.size/6,v.xy[1])
-                        one = (v.xy[0]+v.size/6, a + (t/n)*(b-a)) 
-                        
+                        #zero = (v.xy[0]+v.size/6,v.xy[1])
+                        zero = "new Point(p{}.x + {}, p{}.y)"\
+                                .format(i,v.size/6,i)
+                        #one = (v.xy[0]+v.size/6, v.xy[1]+ a + (t/n)*(b-a)) 
+                        one = "new Point(p{}.x + {}, p{}.y+{})"\
+                                .format(i,v.size/6,i,(a-v.xy[1]) + (t/n)*(b-a))
                         #draw the horizontal line across to the child vertex
-                        two = (end_x,one[1])
-                        
+                        #two = (u.xy[0]+end_x,one[1])
+                        two = "new Point(p{}.x + {}, p{}.y+{})"\
+                                .format(j, end_x,i,(a-v.xy[1])+ (t/n)*(b-a))
                         #draw the vertical line down to the child vertex
-                        three = (end_x,u.xy[1])
-                        
+                        #three = (u.xy[0]+end_x,u.xy[1])
+                        three = "new Point(p{}.x + {}, p{}.y)"\
+                                .format(j, end_x,j)
                        
-                        print draw_path([zero,one,two,three], 1, col_m[u.win+1])
-                        
+                        print draw_path([zero,one,two,three], 1, col_m[u.win+1],"m_x")
+
                         
                 if step == True:
                     t += 1
@@ -582,34 +604,37 @@ def draw_bad_edges():
         else:
             t = 0
             for v in sorted(levs[m], key= lambda w: w.sortkey):
-                j = vertices.index(v)
-                
+                i = vertices.index(v)
                 step = False
-                for u in a_list[j]:
+                for u in a_list[i]:
                     
-                    
+                    j = vertices.index(u)
                     if u.moves() < v.moves() and u.win != v.win:
                         step = True
                         #calculate coordinate for edge connecting with child vertex
                         
-                        end_x = u.xy[0] - u.size/2 + (u.counter)/(u.bp+1)*u.size
+                        end_x = (u.counter)/(u.bp+1)*u.size -u.size/2
                         
                         u.counter += 1
                                                         
                         #draw the vertical line down the the desired depth        
-                        zero = (v.xy[0]-v.size/6,v.xy[1])
-                        one = (v.xy[0]-v.size/6, a + (t/n)*(b-a))
-                                                
+                        #zero = (v.xy[0]-v.size/6,v.xy[1])
+                        zero = "new Point(p{}.x + {}, p{}.y)"\
+                                .format(i,-v.size/6,i)
+                        #one = (v.xy[0]-v.size/6,  v.xy[1]+a + (t/n)*(b-a))
+                        one = "new Point(p{}.x + {}, p{}.y+{})"\
+                            .format(i,-v.size/6,i, (a-v.xy[1])+(t/n)*(b-a))                        
                         #draw the horizontal line across to the child vertex
-                        two = (end_x,one[1])
-                                                
+                        #two = (u.xy[0]+end_x,one[1])
+                        two = "new Point(p{}.x + {}, p{}.y+{})"\
+                             .format(j, end_x,i,(a-v.xy[1])+(t/n)*(b-a))                      
                         #draw the vertical line down to the child vertex
-                        three = (end_x,u.xy[1])
+                        #three = (u.xy[0]+end_x,u.xy[1])
+                        three = "new Point(p{}.x + {}, p{}.y)"\
+                                .format(j, end_x,j)
                         
-                        
-                        
-                        print draw_path([zero,one,two,three], 1, col_m[u.win+1])            
-                                    
+                        print draw_path([zero,one,two,three],1,col_m[u.win+1],"m_o")            
+ 
                 if step == True:
                     t += 1
 
@@ -662,37 +687,32 @@ def draw_title():
 
 if __name__ == "__main__":
     """Program entry point."""
-   
+    
     # Print LaTeX preamble.
     print header
     
     # Read the input graph.
     #vertices = read_graph('tictactoe.txt')
-    
-    
-    vertices, a_list, s_list = load_data("tictactoe1.graph")
 
+    vertices, a_list, s_list = load_data("tictactoe1.graph")
+   
     
     # Determine the winner for each node -1=O, 0=draw, 1=X.
     #minimax(vertices)
-    
-    
     win_loose_draw()         
-    
     minimax(vertices[0], True)
    
    
    
     # Assign coordinates to the nodes.
     reorder()
-    
     symmetry()
     winningness()
     
 
     # Draw backgrounds.
     for i in [0, 1, 2]:
-        col = ['rgb(255,240,240)', 'rgb(240,255,240)', 'rgb(240,240,255)'][i]
+        col = ['rgb(255,220,220)', 'rgb(220,255,220)', 'rgb(220,220,255)'][i]
         
         print """var bg_rect = new Rectangle(new Point({},{}), new Size({},{}));
                 var bg_path = new Path.Rectangle(bg_rect);
@@ -700,6 +720,9 @@ if __name__ == "__main__":
                 bg_path.strokeColor = '{}';
                 """.format(width*sum(fractions[:i]),0, width*fractions[i],height-10,col,col)
 
+    
+    #generate paper.js objects
+    generate_points()
     
     #draw edges
  
@@ -709,9 +732,10 @@ if __name__ == "__main__":
    
     # Draw the vertices.
     for u in vertices:
-        #col = w_col(u,['red','grey1','blue'])
-        print draw_board(u.xy, u.size, u.symbol, u.win,w_col(u))
    
+        #print draw_board(u,vertices.index(u),w_col(u))
+         print draw_board2(u)
+         
     # Draw the title
     
     #print draw_title()
