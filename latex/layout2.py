@@ -11,11 +11,11 @@ header=r'''\documentclass{article}
 
 \usepackage{geometry}
  \geometry{
- papersize={915mm,610mm},
- left=10mm,
- right=10mm,
- top=10mm,
- bottom=10mm,
+ papersize={841mm,594mm},
+ left=4mm,
+ right=8mm,
+ top=8mm,
+ bottom=8mm,
  }
  
 \usepackage[default]{comfortaa}
@@ -66,7 +66,7 @@ a_list = []
 s_list = []
 win = []
 levs = [[],[],[],[],[],[],[],[],[],[]]
-width, height =  893, 588
+width, height =  821, 576
 fractions = [.35, .3, .35] # These are the fractions of width devoted to O, draw, and X.
 factor = 1
 #fractions2 = [1/22,2/22,3/22,5/22,8/22,11/22,14/22,17/22,20/22,21/22]
@@ -451,8 +451,18 @@ def winningness():
         if not data:
             v.w = v.win
         
-    
+def v_list_coordinates(self,v_list):
+    return [i.xy for i in v_list]
 
+    #save the v_list indexes of connected vertices
+def v_list_index(self, v_list, a_list):
+    a_list_ind = []
+        
+    for i in range(len(a_list)):
+        a_list_ind.append([])
+        for j in a_list[i]:
+            a_list_ind[i].append(v_list.index(j))
+    return a_list_ind    
 
     
 def w_col(v, cols):
@@ -640,12 +650,12 @@ def draw_title():
 
     indent1 = width/35
     indent2 = indent1 + 30
-    title = r"""{\fontsize{25mm}{40mm}\selectfont Tictactoe
+    title = r"""{\fontsize{2mm}{40mm}\selectfont Tictactoe
      
      }"""
     
     text = r'''{    
-    \fontsize{10mm}{10mm}\selectfont X wins (perfect play)
+    \fontsize{8mm}{10mm}\selectfont X wins (perfect play)
      
     O wins (perfect play)
      
